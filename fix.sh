@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔧 CORRECCIÓN COMPLETA DE TODOS LOS SERVICIOS"
+echo "🚀 FORZANDO RECONSTRUCCIÓN COMPLETA SIN CACHÉ"
 
 for service_dir in ./microservices/*/; do
   if [ -f "${service_dir}package.json" ]; then
@@ -10,41 +10,9 @@ for service_dir in ./microservices/*/; do
     echo "📦 Procesando: $service"
     cd "$service_dir"
 
-    # 1. Limpiar OpenTelemetry y observabilidad
-    rm -f src/instrumentation.ts
-    rm -f src/middlewares/observability.middleware.ts
-    if [ -f src/server.ts ]; then
-      perl -pi -e 's/^import ["'\''].\/instrumentation["'\''];?\n?//' src/server.ts
-    fi
-    if [ -f src/app.ts ]; then
-      perl -pi -e 's/^import.*observability\.middleware.*\n?//' src/app.ts
-      perl -pi -e 's/^\s*app\.use\((metricsMiddleware|loggerMiddleware)\).*\n?//' src/app.ts
-      perl -pi -e 's/^\s*app\.get\(["'\''"]\/metrics["'\''"],\s*metricsEndpoint\).*\n?//' src/app.ts
-    fi
-
-    # 2. Verificar si el servicio usa TypeORM y agregar dependencias
-    if find src -type f \( -name "*.entity.ts" -o -name "data-source.ts" \) | grep -q .; then
-      npm install typeorm reflect-metadata pg
-      npm install --save-dev @types/node
-    fi
-
-    # 3. Agregar exportaciones DTO en archivos .schema.ts
-    find src -type f -name "*.schema.ts" | while read schema_file; do
-      if grep -q 'z\.object' "$schema_file"; then
-        schemas=$(grep -E '^export const [A-Za-z0-9_]+Schema' "$schema_file" | sed -E 's/^export const ([A-Za-z0-9_]+)Schema.*/\1/')
-        for schema_name in $schemas; do
-          dto_name="${schema_name}DTO"
-          if ! grep -q "export type ${dto_name} = z.infer<typeof ${schema_name}Schema>" "$schema_file"; then
-            echo "export type ${dto_name} = z.infer<typeof ${schema_name}Schema>;" >> "$schema_file"
-          fi
-        done
-      fi
-    done
-
-    # 4. Corrección específica para message-service: error de propiedad 'type' en array
-    if [ "$service" == "message-service" ] && [ -f src/services/message.service.ts ]; then
-      echo "   Aplicando fix específico para message-service..."
-      cp src/services/message.service.ts src/services/message.service.ts.bak
+    # 1. Si es message-service, sobreescribir el archivo problemático
+    if [ "$service" == "message-service" ]; then
+      echo "   Corrigiendo message.service.ts..."
       cat > src/services/message.service.ts << 'EOF'
 import { AppDataSource, redisClient } from '../config/data-source';
 import { TerminalMessage, MessageType } from '../entities/Message';
@@ -91,32 +59,19 @@ export const updateMessageStatus = async (id: string, status: string) => {
 EOF
     fi
 
-    # 5. Dockerfile multi-stage
-    cat > Dockerfile << 'EOF'
-FROM node:20-alpine AS builder
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+    # 2. Eliminar imagen anterior (si existe)
+    docker rmi -f "ecrt/$service:latest" 2>/dev/null || true
 
-FROM node:20-alpine
-WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app/package*.json ./
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-EOF
-
-    # 6. Reconstruir imagen
-    echo "🏗️  Reconstruyendo imagen ecrt/$service:latest..."
+    # 3. Construir sin caché (--no-cache)
+    echo "🏗️  Reconstruyendo sin caché ecrt/$service:latest..."
+    docker build --no-cache -t "ecrt/$service:latest" .
 
     cd - >/dev/null
   fi
 done
 
-echo "✅ Todos los servicios corregidos."
+echo "✅ Todos los servicios reconstruidos frescos."
 echo "🔄 Desplegando stack actualizado..."
+docker stack rm ecrt 2>/dev/null || true
 
 echo "🎉 Proceso completado. Verifica con: docker stack ps ecrt"
