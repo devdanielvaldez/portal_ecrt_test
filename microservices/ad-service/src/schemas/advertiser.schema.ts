@@ -15,3 +15,5 @@ export const UpdateAdvertiserSchema = z.object({
   phone: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional()
 });
+export type CreateAdvertiserDTO = z.infer<typeof CreateAdvertiserSchema>;
+export type UpdateAdvertiserDTO = z.infer<typeof UpdateAdvertiserSchema>;

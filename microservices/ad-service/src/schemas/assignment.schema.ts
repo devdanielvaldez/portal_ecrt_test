@@ -9,3 +9,4 @@ export const AssignAdSchema = z.object({
   const hasGroups = data.group_ids && data.group_ids.length > 0;
   return hasTerminals || hasGroups;
 }, "Must provide terminal_ids or group_ids");
+export type AssignAdDTO = z.infer<typeof AssignAdSchema>;

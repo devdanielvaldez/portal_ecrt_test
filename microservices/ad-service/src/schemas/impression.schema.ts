@@ -14,3 +14,5 @@ export const DashboardFilterSchema = z.object({
   organization_id: z.string().uuid().optional(),
   group_by: z.enum(['day', 'week', 'month']).default('day')
 });
+export type CreateImpressionDTO = z.infer<typeof CreateImpressionSchema>;
+export type DashboardFilterDTO = z.infer<typeof DashboardFilterSchema>;

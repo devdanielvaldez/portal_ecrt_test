@@ -13,3 +13,5 @@ export const SendMessageSchema = z.object({
 export const UpdateMessageSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE'])
 });
+export type SendMessageDTO = z.infer<typeof SendMessageSchema>;
+export type UpdateMessageDTO = z.infer<typeof UpdateMessageSchema>;

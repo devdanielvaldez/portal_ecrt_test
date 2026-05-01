@@ -8,13 +8,6 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.216.0",
-    "@opentelemetry/instrumentation-express": "^0.64.0",
-    "@opentelemetry/instrumentation-http": "^0.216.0",
-    "@opentelemetry/resources": "^2.7.1",
-    "@opentelemetry/sdk-node": "^0.216.0",
-    "@opentelemetry/semantic-conventions": "^1.40.0",
     "aws-sdk": "^2.1691.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

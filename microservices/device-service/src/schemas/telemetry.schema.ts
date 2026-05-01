@@ -10,3 +10,4 @@ export const TelemetrySchema = z.object({
   longitude: z.number().min(-180).max(180).optional(),
   device_signature: z.string().min(10)
 });
+export type TelemetryDTO = z.infer<typeof TelemetrySchema>;

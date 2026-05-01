@@ -27,3 +27,6 @@ export const FilterAdSchema = z.object({
   page: z.string().regex(/^\d+$/).optional().default("1"),
   limit: z.string().regex(/^\d+$/).optional().default("20")
 });
+export type CreateAdDTO = z.infer<typeof CreateAdSchema>;
+export type ReviewAdDTO = z.infer<typeof ReviewAdSchema>;
+export type FilterAdDTO = z.infer<typeof FilterAdSchema>;

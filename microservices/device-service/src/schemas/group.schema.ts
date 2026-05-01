@@ -10,3 +10,5 @@ export const UpdateGroupSchema = z.object({
   name: z.string().min(2).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional()
 });
+export type CreateGroupDTO = z.infer<typeof CreateGroupSchema>;
+export type UpdateGroupDTO = z.infer<typeof UpdateGroupSchema>;

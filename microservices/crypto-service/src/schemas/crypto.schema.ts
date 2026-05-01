@@ -7,3 +7,5 @@ export const EncryptRequestSchema = z.object({
 export const DecryptRequestSchema = z.object({
   payload: z.string()
 });
+export type EncryptRequestDTO = z.infer<typeof EncryptRequestSchema>;
+export type DecryptRequestDTO = z.infer<typeof DecryptRequestSchema>;

@@ -18,3 +18,7 @@ export const UpdateUserSchema = z.object({
 export const ChangePasswordSchema = z.object({
   new_password: z.string().min(6)
 });
+export type CreateAdminDTO = z.infer<typeof CreateAdminSchema>;
+export type CreateOrgUserDTO = z.infer<typeof CreateOrgUserSchema>;
+export type UpdateUserDTO = z.infer<typeof UpdateUserSchema>;
+export type ChangePasswordDTO = z.infer<typeof ChangePasswordSchema>;

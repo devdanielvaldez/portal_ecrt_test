@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import pino from 'pino';
 import client from 'prom-client';
-import { trace, context } from '@opentelemetry/api';
+
 
 // Métricas
 const httpRequestsTotal = new client.Counter({
@@ -40,7 +40,7 @@ export const metricsMiddleware = (req: Request, res: Response, next: NextFunctio
 };
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const span = trace.getSpan(context.active());
+  const span = null;
   const traceId = span?.spanContext().traceId;
   const childLogger = traceId ? logger.child({ trace_id: traceId }) : logger;
   (req as any).logger = childLogger;

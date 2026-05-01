@@ -14,3 +14,5 @@ export const UpdateOrgSchema = z.object({
   phone: z.string().optional(),
   metadata: z.any().optional()
 });
+export type CreateOrgDTO = z.infer<typeof CreateOrgSchema>;
+export type UpdateOrgDTO = z.infer<typeof UpdateOrgSchema>;

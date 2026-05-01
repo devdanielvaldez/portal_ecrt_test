@@ -20,3 +20,5 @@ export const FilterTransactionSchema = z.object({
   page: z.string().regex(/^\d+$/).optional().default("1"),
   limit: z.string().regex(/^\d+$/).optional().default("50")
 });
+export type CreateTransactionDTO = z.infer<typeof CreateTransactionSchema>;
+export type FilterTransactionDTO = z.infer<typeof FilterTransactionSchema>;

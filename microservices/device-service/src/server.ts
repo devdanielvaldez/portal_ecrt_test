@@ -1,4 +1,3 @@
-import "./instrumentation";
 import app from './app';
 import { AppDataSource, redisClient } from './config/data-source';
 import dotenv from 'dotenv';

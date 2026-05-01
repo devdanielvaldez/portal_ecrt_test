@@ -23,3 +23,6 @@ export const FilterTerminalSchema = z.object({
   page: z.string().regex(/^\d+$/).optional().default("1"),
   limit: z.string().regex(/^\d+$/).optional().default("20")
 });
+export type CreateTerminalDTO = z.infer<typeof CreateTerminalSchema>;
+export type UpdateTerminalDTO = z.infer<typeof UpdateTerminalSchema>;
+export type FilterTerminalDTO = z.infer<typeof FilterTerminalSchema>;

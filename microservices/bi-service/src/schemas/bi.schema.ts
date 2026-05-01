@@ -8,3 +8,4 @@ export const BIFilterSchema = z.object({
   group_id: z.string().uuid().optional(),
   time_group: z.enum(['day', 'week', 'month', 'year']).default('day')
 });
+export type BIFilterDTO = z.infer<typeof BIFilterSchema>;
