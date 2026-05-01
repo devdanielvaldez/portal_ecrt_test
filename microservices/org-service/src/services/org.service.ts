@@ -4,7 +4,7 @@ import { Organization } from '../entities/Organization';
 const orgRepo = AppDataSource.getRepository(Organization);
 
 export const createOrganization = async (data: any) => {
-  const org = orgRepo.create(data);
+  const org: any = orgRepo.create(data);
   const saved = await orgRepo.save(org);
   const authResponse = await fetch(`${process.env.AUTH_SERVICE_URL}/api/v1/users`, {
     method: 'POST',
