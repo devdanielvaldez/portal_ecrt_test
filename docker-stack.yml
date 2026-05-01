@@ -1,0 +1,466 @@
+version: '3.8'
+
+networks:
+  ecrt-net:
+    external: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  media_uploads:
+  grafana-storage:
+
+secrets:
+  jwt_secret:
+    external: false
+    file: ./secrets/jwt_secret.txt
+  encryption_key:
+    external: false
+    file: ./secrets/encryption_key.txt
+
+services:
+  # ========== INFRAESTRUCTURA ==========
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: portal_ecrt
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========== API GATEWAY ==========
+  kong:
+    image: kong:3.6-ubuntu
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/etc/kong/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: host
+      - target: 8001
+        published: 8001
+        protocol: tcp
+        mode: host
+    volumes:
+      - ./api-gateway/kong.yml:/etc/kong/kong.yml:ro
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+    command: caddy reverse-proxy --from localhost --to http://kong:8000
+    volumes:
+      - caddy_data:/data
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          memory: 128M
+
+  # ========== MICROSERVICIOS ==========
+  crypto-service:
+    image: ecrt/crypto-service:latest
+    build: ./microservices/crypto-service
+    environment:
+      PORT: 3009
+      ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+    secrets:
+      - encryption_key
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  auth-service:
+    image: ecrt/auth-service:latest
+    build: ./microservices/auth-service
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: auth_db
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      SETUP_MASTER_KEY: Prueba01*
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: auth-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - crypto-service
+
+  device-service:
+    image: ecrt/device-service:latest
+    build: ./microservices/device-service
+    environment:
+      PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: device_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: device-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - redis
+      - crypto-service
+
+  org-service:
+    image: ecrt/org-service:latest
+    build: ./microservices/org-service
+    environment:
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: org_db
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      AUTH_SERVICE_URL: http://auth-service:3001
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: org-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - auth-service
+      - crypto-service
+
+  ad-service:
+    image: ecrt/ad-service:latest
+    build: ./microservices/ad-service
+    environment:
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: ad_db
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      DEVICE_SERVICE_URL: http://device-service:3002
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: ad-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - crypto-service
+
+  finance-service:
+    image: ecrt/finance-service:latest
+    build: ./microservices/finance-service
+    environment:
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: finance_db
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: finance-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - crypto-service
+
+  message-service:
+    image: ecrt/message-service:latest
+    build: ./microservices/message-service
+    environment:
+      PORT: 3006
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: message_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: message-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      - postgres
+      - redis
+      - crypto-service
+
+  media-service:
+    image: ecrt/media-service:latest
+    build: ./microservices/media-service
+    environment:
+      PORT: 3007
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      BASE_API_URL: http://localhost:8000/api/v1/media/private
+      USE_S3: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: media-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    volumes:
+      - media_uploads:/usr/src/app/uploads
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - crypto-service
+
+  bi-service:
+    image: ecrt/bi-service:latest
+    build: ./microservices/bi-service
+    environment:
+      PORT: 3008
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: portal_ecrt
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: bi-service
+      LOG_LEVEL: info
+    secrets:
+      - jwt_secret
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - postgres
+      - crypto-service
+
+  # ========== OBSERVABILIDAD ==========
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    networks:
+      - ecrt-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 128M
+    command: -config.file=/etc/promtail/config.yaml

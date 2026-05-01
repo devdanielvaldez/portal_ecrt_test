@@ -1,0 +1,312 @@
+version: '3.8'
+
+networks:
+  ecrt-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  media_uploads:
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: portal_ecrt
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecrt-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecrt-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kong:
+    image: kong:3.6-ubuntu
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/etc/kong/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+    ports:
+      - "8000:8000"   # Proxy
+      - "8001:8001"   # Admin API
+    volumes:
+      - ./api-gateway/kong.yml:/etc/kong/kong.yml:ro
+    networks:
+      - ecrt-net
+    depends_on:
+      - crypto-service
+      - auth-service
+      - device-service
+      - org-service
+      - ad-service
+      - finance-service
+      - message-service
+      - media-service
+      - bi-service
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from localhost --to http://kong:8000
+    volumes:
+      - caddy_data:/data
+    networks:
+      - ecrt-net
+    depends_on:
+      - kong
+
+  crypto-service:
+    build: ./microservices/crypto-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: crypto-service
+      LOG_LEVEL: info
+      PORT: 3009
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+    ports:
+      - "3009:3009"
+    networks:
+      - ecrt-net
+    restart: unless-stopped
+
+  auth-service:
+    build: ./microservices/auth-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: auth-service
+      LOG_LEVEL: info
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: auth_db
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      SETUP_MASTER_KEY: Prueba01*
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    ports:
+      - "3001:3001"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  device-service:
+    build: ./microservices/device-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: device-service
+      LOG_LEVEL: info
+      PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: device_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    ports:
+      - "3002:3002"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  org-service:
+    build: ./microservices/org-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: org-service
+      LOG_LEVEL: info
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: org_db
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      AUTH_SERVICE_URL: http://auth-service:3001
+    ports:
+      - "3003:3003"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  ad-service:
+    build: ./microservices/ad-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: ad-service
+      LOG_LEVEL: info
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: ad_db
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      DEVICE_SERVICE_URL: http://device-service:3002
+    ports:
+      - "3004:3004"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  finance-service:
+    build: ./microservices/finance-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: finance-service
+      LOG_LEVEL: info
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: finance_db
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    ports:
+      - "3005:3005"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  message-service:
+    build: ./microservices/message-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: message-service
+      LOG_LEVEL: info
+      PORT: 3006
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: message_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    ports:
+      - "3006:3006"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  media-service:
+    build: ./microservices/media-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: media-service
+      LOG_LEVEL: info
+      PORT: 3007
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      BASE_API_URL: http://localhost:8000/api/v1/media/private
+      USE_S3: ${USE_S3:-false}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+    volumes:
+      - media_uploads:/usr/src/app/uploads
+    ports:
+      - "3007:3007"
+    networks:
+      - ecrt-net
+    depends_on:
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+
+  bi-service:
+    build: ./microservices/bi-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      SERVICE_NAME: bi-service
+      LOG_LEVEL: info
+      PORT: 3008
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: portal_ecrt
+      JWT_SECRET: super_secret_jwt_key_for_ecrt_2024
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    ports:
+      - "3008:3008"
+    networks:
+      - ecrt-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    restart: unless-stopped
+

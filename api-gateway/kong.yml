@@ -1,0 +1,140 @@
+_format_version: "3.0"
+
+plugins:
+  - name: correlation-id
+    config:
+      header_name: traceparent
+      generator: uuid
+      echo_downstream: true
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+  - name: rate-limiting
+    config:
+      minute: 60
+      policy: local
+      fault_tolerant: true
+      hide_client_headers: false
+
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - Authorization
+        - x-api-key
+        - x-master-key
+      exposed_headers:
+        - Authorization
+      credentials: true
+      max_age: 3600
+
+  - name: response-transformer
+    config:
+      remove:
+        headers:
+          - X-Powered-By
+          - Server
+          - Via
+
+services:
+  - name: crypto-service
+    url: http://crypto-service:3009
+    routes:
+      - name: crypto-route
+        paths: [ /api/v1/crypto ]
+        strip_path: false
+
+  - name: auth-service
+    url: http://auth-service:3001
+    routes:
+      - name: auth-setup-route
+        paths: [ /api/v1/setup ]
+        strip_path: false
+      - name: auth-login-route
+        paths: [ /api/v1/auth ]
+        strip_path: false
+      - name: auth-users-route
+        paths: [ /api/v1/users ]
+        strip_path: false
+
+  - name: device-service
+    url: http://device-service:3002
+    routes:
+      - name: device-terminals-route
+        paths: [ /api/v1/terminals ]
+        strip_path: false
+      - name: device-telemetry-route
+        paths: [ /api/v1/telemetry ]
+        strip_path: false
+      - name: device-groups-route
+        paths: [ /api/v1/terminal-groups ]
+        strip_path: false
+
+  - name: org-service
+    url: http://org-service:3003
+    routes:
+      - name: org-main-route
+        paths: [ /api/v1/organizations ]
+        strip_path: false
+      - name: org-agencies-route
+        paths: [ /api/v1/agencies ]
+        strip_path: false
+
+  - name: ad-service
+    url: http://ad-service:3004
+    routes:
+      - name: ad-advertisers-route
+        paths: [ /api/v1/advertisers ]
+        strip_path: false
+      - name: ad-ads-route
+        paths: [ /api/v1/ads ]
+        strip_path: false
+      - name: ad-impressions-route
+        paths: [ /api/v1/impressions ]
+        strip_path: false
+
+  - name: finance-service
+    url: http://finance-service:3005
+    routes:
+      - name: finance-transactions-route
+        paths: [ /api/v1/transactions ]
+        strip_path: false
+
+  - name: message-service
+    url: http://message-service:3006
+    routes:
+      - name: message-main-route
+        paths: [ /api/v1/messages ]
+        strip_path: false
+
+  - name: media-service
+    url: http://media-service:3007
+    routes:
+      - name: media-main-route
+        paths: [ /api/v1/media ]
+        strip_path: false
+
+  - name: bi-service
+    url: http://bi-service:3008
+    routes:
+      - name: bi-main-route
+        paths: [ /api/v1/bi ]
+        strip_path: false
