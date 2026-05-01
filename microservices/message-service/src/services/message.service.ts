@@ -4,7 +4,7 @@ import { TerminalMessage, MessageType } from '../entities/Message';
 const msgRepo = AppDataSource.getRepository(TerminalMessage);
 
 export const sendMessage = async (data: any) => {
-  const message = msgRepo.create(data);
+  const message: any = msgRepo.create(data);
   await msgRepo.save(message);
   if (message.type === MessageType.FLASH) {
     await redisClient.lPush('flash_messages', JSON.stringify(message));
