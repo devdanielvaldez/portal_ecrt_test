@@ -1,9 +1,5 @@
-cd microservices/ad-service
-
-# 1. Instalar los paquetes necesarios (si no están)
+#!/bin/bash
 npm install @opentelemetry/resources @opentelemetry/semantic-conventions
-
-# 2. Reemplazar el archivo instrumentation.ts con el contenido correcto
 cat > src/instrumentation.ts << 'EOF'
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
