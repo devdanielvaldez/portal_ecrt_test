@@ -11,14 +11,14 @@ export const cryptoMiddleware = async (req: Request, res: Response, next: NextFu
     }
   }
   const originalJson = res.json;
-  res.json = async function (data: any): Promise<Response> {
+  res.json = function (data: any): Response {
     res.json = originalJson;
-    try {
-      const encrypted = await encryptPayload(data);
-      return originalJson.call(this, { payload: encrypted });
-    } catch (err) {
-      return originalJson.call(this, { error: 'Encryption failed' });
-    }
+    encryptPayload(data).then(encrypted => {
+      originalJson.call(this, { payload: encrypted });
+    }).catch(err => {
+      originalJson.call(this, { error: 'Encryption failed' });
+    });
+    return this;
   };
   next();
 };
