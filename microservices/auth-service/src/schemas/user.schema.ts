@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 export const CreateAdminSchema = z.object({
-  email: z.string().email()
+  email: z.string().email(),
+  password: z.string().min(8).regex(
+    /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/,
+    'La contraseña debe contener mayúscula, minúscula y número'
+  )
 });
 
 export const CreateOrgUserSchema = z.object({

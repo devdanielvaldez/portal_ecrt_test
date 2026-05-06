@@ -1,6 +1,6 @@
 ================================================================================
 EXTRACCIÓN COMPLETA DEL PROYECTO: /Users/user/Documents/Projects/PortalECRTAds/api_microservices_ecrt
-Fecha: 5/6/2026, 8:12:29 AM
+Fecha: 5/6/2026, 5:08:18 PM
 ================================================================================
 
 📁 ESTRUCTURA DE CARPETAS
@@ -200,8 +200,7 @@ api_microservices_ecrt/
 │   │   │   ├── config/
 │   │   │   │   └── data-source.ts
 │   │   │   ├── controllers/
-│   │   │   │   ├── media.controller.ts
-│   │   │   │   └── media.controller.ts.bak
+│   │   │   │   └── media.controller.ts
 │   │   │   ├── entities/
 │   │   │   ├── middlewares/
 │   │   │   │   ├── auth.middleware.ts
@@ -274,6 +273,7 @@ api_microservices_ecrt/
 │       │   └── utils/
 │       │       └── crypto.client.ts
 │       └── tsconfig.json
+├── openapi_collection.json
 ├── package.json
 ├── prometheus/
 │   └── prometheus.yml
@@ -1670,7 +1670,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// // app.use(cryptoMiddleware);
 
 app.use('/api/v1/advertisers', advertiserRoutes);
 app.use('/api/v1/ads', adRoutes);
@@ -2575,6 +2575,12 @@ services:
       DB_NAME: auth_db
       JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
       CRYPTO_SERVICE_URL: http://crypto-service:3009
+      SETUP_MASTER_KEY: Prueba01*
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+
+      AD_BASE_URL: https://api-test.portall.com.do:2053/api/v2
+      AD_AUTH_EMAIL: ecrt-plus@portaldom.com.do
+      AD_AUTH_PASSWORD: TMmTP0NYOS0=
     depends_on:
       - postgres
     networks:
@@ -2645,7 +2651,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// // app.use(cryptoMiddleware);
 
 app.use('/api/v1/setup', setupRoutes);
 app.use('/api/v1/auth', authRoutes);
@@ -2840,7 +2846,7 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
 
 export const changePassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = parseInt(req.params.id);
+    const userId: any = String(req.params.id);
     if (isNaN(userId)) {
       res.status(400).json({ error: 'Invalid user ID' });
       return;
@@ -2888,6 +2894,7 @@ export const loginDevice = async (req: Request, res: Response): Promise<void> =>
 };
 
 
+
 >>> ARCHIVO: microservices/auth-service/src/controllers/setup.controller.ts
 ────────────────────────────────────────────────────────────
 import { Request, Response } from 'express';
@@ -2900,6 +2907,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
     const result = await setupService.setupFirstAdmin(email);
     res.status(201).json({ success: true, message: 'Admin created', data: result });
   } catch (error: any) {
+    console.log(error);
     if (error.name === 'ZodError') {
       res.status(400).json({ error: 'Validation error', details: error.errors });
       return;
@@ -3107,8 +3115,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const requireMasterKey = (req: Request, res: Response, next: NextFunction): void => {
+  console.log(process.env);
+  
   const masterKey = req.headers['x-master-key'];
-  if (!masterKey || masterKey !== process.env.SETUP_MASTER_KEY) {
+  console.log(masterKey);
+  console.log(req.headers);
+
+  if (masterKey !== process.env.SETUP_MASTER_KEY) {
     res.status(403).json({ error: 'Invalid or missing master key' });
     return;
   }
@@ -3584,7 +3597,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// // app.use(cryptoMiddleware);
 
 app.use('/api/v1/bi', biRoutes);
 
@@ -4248,7 +4261,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// app.use(cryptoMiddleware);
 
 app.use('/api/v1/terminals', terminalRoutes);
 app.use('/api/v1/terminal-groups', groupRoutes);
@@ -5021,7 +5034,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// app.use(cryptoMiddleware);
 
 app.use('/api/v1/transactions', transactionRoutes);
 
@@ -5543,11 +5556,6 @@ export const getSecurePlaybackUrl = async (req: AuthRequest, res: Response): Pro
 
 
 
->>> ARCHIVO: microservices/media-service/src/controllers/media.controller.ts.bak
-────────────────────────────────────────────────────────────
-[ARCHIVO BINARIO O NO TEXTUAL: media.controller.ts.bak]
-
-
 >>> ARCHIVO: microservices/media-service/src/middlewares/auth.middleware.ts
 ────────────────────────────────────────────────────────────
 import { Request, Response, NextFunction } from 'express';
@@ -5927,7 +5935,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// app.use(cryptoMiddleware);
 
 app.use('/api/v1/messages', messageRoutes);
 
@@ -6377,7 +6385,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// app.use(cryptoMiddleware);
 
 app.use('/api/v1/organizations', orgRoutes);
 app.use('/api/v1/agencies', agencyRoutes);
@@ -6879,6 +6887,1312 @@ export async function decryptPayload(payload: string): Promise<any> {
   }
 }
 
+
+
+>>> ARCHIVO: openapi_collection.json
+────────────────────────────────────────────────────────────
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ECRT Advertising Platform API",
+    "description": "API completa para la plataforma de publicidad ECRT, que incluye gestión de anuncios, autenticación, dispositivos, finanzas, mensajería, medios, organizaciones y BI.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Soporte ECRT",
+      "email": "soporte@ecrt.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.ecrt.com/v1",
+      "description": "Servidor de producción"
+    },
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Servidor local (Kong Gateway)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtenido de /auth/login o /auth/device-login"
+      },
+      "MasterKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-master-key",
+        "description": "Clave maestra para configuración inicial (setup)"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["ADMIN", "ORG_USER"] },
+          "organization_id": { "type": "string", "format": "uuid", "nullable": true },
+          "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["COMMERCE", "AGENCY"] },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+          "metadata": { "type": "object", "nullable": true }
+        }
+      },
+      "Terminal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "serial_number": { "type": "string" },
+          "organization_id": { "type": "string", "format": "uuid", "nullable": true },
+          "group_id": { "type": "string", "format": "uuid", "nullable": true },
+          "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+          "is_claimed": { "type": "boolean" }
+        }
+      },
+      "Ad": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "advertiser_id": { "type": "string", "format": "uuid" },
+          "media_url": { "type": "string", "format": "uri" },
+          "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+          "is_all_day": { "type": "boolean" },
+          "start_time": { "type": "string", "format": "time", "nullable": true },
+          "end_time": { "type": "string", "format": "time", "nullable": true },
+          "days_of_week": { "type": "array", "items": { "type": "string", "enum": ["MON","TUE","WED","THU","FRI","SAT","SUN"] } },
+          "status": { "type": "string", "enum": ["PENDING","ACTIVE","REJECTED","INACTIVE"] }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "terminal_id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "amount": { "type": "number" },
+          "payment_method": { "type": "string", "enum": ["CHIP","TAP","SWIPE"] },
+          "card_brand": { "type": "string", "enum": ["VISA","MASTERCARD","AMEX","SUBSIDIZED"] },
+          "latitude": { "type": "number", "nullable": true },
+          "longitude": { "type": "number", "nullable": true }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "type": { "type": "string", "enum": ["FLASH","STICKY"] },
+          "duration_seconds": { "type": "integer" },
+          "organization_id": { "type": "string", "format": "uuid", "nullable": true },
+          "group_id": { "type": "string", "format": "uuid", "nullable": true },
+          "terminal_id": { "type": "string", "format": "uuid", "nullable": true },
+          "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"] }
+        }
+      }
+    },
+    "requestBodies": {
+      "EncryptedPayload": {
+        "description": "Petición encriptada (payload cifrado por crypto-service)",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["payload"],
+              "properties": {
+                "payload": { "type": "string", "description": "Payload encriptado en formato 'iv:encryptedData'" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [{ "BearerAuth": [] }],
+  "paths": {
+    "/setup": {
+      "post": {
+        "summary": "Crear el primer administrador (solo una vez)",
+        "description": "Requiere cabecera x-master-key. Crea un usuario ADMIN con el email proporcionado. El usuario no tendrá contraseña porque la autenticación se delega a Active Directory, pero se crea en la base de datos local.",
+        "security": [{ "MasterKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": { "email": { "type": "string", "format": "email" } }
+              },
+              "example": { "email": "admin@ecrt.com" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
+                "example": {
+                  "success": true,
+                  "message": "Admin created",
+                  "data": { "id": "uuid", "email": "admin@ecrt.com", "role": "ADMIN" }
+                }
+              }
+            }
+          },
+          "409": { "description": "El admin ya existe" }
+        }
+      }
+    },
+    "/auth/sign-up": {
+      "post": {
+        "summary": "Registro de usuario (crea en Active Directory y en auth-service)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["firstName", "lastName", "phone", "email", "password"],
+                "properties": {
+                  "firstName": { "type": "string" },
+                  "lastName": { "type": "string" },
+                  "phone": { "type": "string", "pattern": "^[0-9]{10}$" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8, "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$" },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              },
+              "example": {
+                "firstName": "Juan",
+                "lastName": "Perez",
+                "phone": "8095551234",
+                "email": "juan@example.com",
+                "password": "SecurePass123",
+                "organization_id": "org-uuid"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado y autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "access_token": { "type": "string" },
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "message": "User registered",
+                  "data": {
+                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "user": { "id": "uuid", "email": "juan@example.com", "role": "ORG_USER", "organization_id": "org-uuid", "status": "ACTIVE" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Error de validación" },
+          "409": { "description": "Usuario ya existe" }
+        }
+      }
+    },
+    "/auth/sign-in": {
+      "post": {
+        "summary": "Inicio de sesión de usuario (email o phone + password)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "oneOf": [
+                  { "required": ["email", "password"] },
+                  { "required": ["phone", "password"] }
+                ],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string", "pattern": "^[0-9]{10}$" },
+                  "password": { "type": "string" }
+                }
+              },
+              "examples": {
+                "email": { "summary": "Por email", "value": { "email": "juan@example.com", "password": "SecurePass123" } },
+                "phone": { "summary": "Por teléfono", "value": { "phone": "8095551234", "password": "SecurePass123" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticación exitosa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "access_token": { "type": "string" },
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/auth/forget-password": {
+      "post": {
+        "summary": "Solicitar contraseña temporal (enviada por email/SMS)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "oneOf": [
+                  { "required": ["email"] },
+                  { "required": ["phone"] }
+                ],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string", "pattern": "^[0-9]{10}$" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña temporal generada",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "message": "Temporal password generated", "data": { "temporal_password": "Temp1234" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/change-password/{id}": {
+      "patch": {
+        "summary": "Cambiar contraseña de usuario (requiere autenticación previa o token)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "password"],
+                "properties": {
+                  "currentPassword": { "type": "string" },
+                  "password": { "type": "string", "minLength": 8, "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Contraseña actualizada" },
+          "403": { "description": "Contraseña actual incorrecta" }
+        }
+      }
+    },
+    "/auth/device-login": {
+      "post": {
+        "summary": "Autenticación de dispositivo terminal",
+        "description": "Devuelve un token JWT con rol DEVICE, válido por 365 días.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["serial_number", "password"],
+                "properties": {
+                  "serial_number": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dispositivo autenticado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Device authenticated",
+                  "data": {
+                    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                    "terminal": { "id": "uuid", "role": "DEVICE", "organization_id": "org-uuid", "serial_number": "ABC123" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "summary": "Crear un usuario de organización (solo admin)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "organization_id"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": { "user": { "id": "uuid", "email": "user@org.com" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "patch": {
+        "summary": "Actualizar usuario (email, status)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Usuario actualizado" } }
+      },
+      "delete": {
+        "summary": "Eliminar usuario (soft delete)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Usuario eliminado" } }
+      }
+    },
+    "/organizations": {
+      "get": {
+        "summary": "Listar organizaciones (filtro por tipo/estado)",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["COMMERCE", "AGENCY"] } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de organizaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Organization" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear una organización (comercio o agencia)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "type", "email"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["COMMERCE", "AGENCY"] },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "metadata": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organización creada, incluye credenciales del usuario admin asociado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "organization": { "id": "uuid", "name": "Mi Comercio", "type": "COMMERCE", "email": "comercio@example.com" },
+                    "user_credentials": { "email": "comercio@example.com", "password": "TempPass123" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{id}": {
+      "get": {
+        "summary": "Obtener organización por ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Organization" } } } },
+          "404": { "description": "No encontrada" }
+        }
+      },
+      "patch": {
+        "summary": "Actualizar organización",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+                  "phone": { "type": "string" },
+                  "metadata": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Organización actualizada" } }
+      },
+      "delete": {
+        "summary": "Eliminar organización (soft delete)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Eliminada" } }
+      }
+    },
+    "/agencies/assignments": {
+      "post": {
+        "summary": "Asignar comercios a una agencia",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["agency_id", "commerce_ids"],
+                "properties": {
+                  "agency_id": { "type": "string", "format": "uuid" },
+                  "commerce_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Asignación realizada" } }
+      }
+    },
+    "/agencies/{id}/commerces": {
+      "get": {
+        "summary": "Obtener comercios asignados a una agencia",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "Lista de organizaciones tipo COMMERCE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Organization" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agencies/network-graph": {
+      "get": {
+        "summary": "Obtener grafo de relaciones agencia-comercio",
+        "responses": {
+          "200": {
+            "description": "Nodos y aristas del grafo",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "nodes": [{ "id": "uuid", "label": "Agencia A", "group": "AGENCY", "status": "ACTIVE" }],
+                    "edges": [{ "id": "uuid", "source": "agencia-uuid", "target": "comercio-uuid" }]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/terminals": {
+      "get": {
+        "summary": "Listar terminales (con filtros y paginación)",
+        "parameters": [
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "group_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["ACTIVE","INACTIVE"] } },
+          { "name": "is_claimed", "in": "query", "schema": { "type": "string", "enum": ["true","false"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de terminales",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Terminal" } },
+                    "meta": { "type": "object", "properties": { "total_items": { "type": "integer" }, "current_page": { "type": "integer" }, "total_pages": { "type": "integer" } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear terminal (genera contraseña automática)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "serial_number"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "serial_number": { "type": "string" },
+                  "organization_id": { "type": "string", "format": "uuid" },
+                  "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"], "default": "INACTIVE" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Terminal creada, devuelve contraseña en texto plano",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Terminal created",
+                  "data": {
+                    "id": "uuid",
+                    "name": "Terminal 1",
+                    "serial_number": "SN123",
+                    "raw_device_password": "A8sDf3"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/terminals/{id}": {
+      "get": {
+        "summary": "Obtener terminal por ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Detalles del terminal", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Terminal" } } } } } } }
+      },
+      "patch": {
+        "summary": "Actualizar terminal (name, org, group, status)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "organization_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "group_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Terminal actualizada" } }
+      },
+      "delete": { "summary": "Eliminar terminal (soft delete)", "responses": { "200": { "description": "Eliminada" } } }
+    },
+    "/terminals/{id}/deactivate": {
+      "post": { "summary": "Desactivar terminal (cambiar status a INACTIVE)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Terminal desactivada" } } }
+    },
+    "/terminal-groups": {
+      "get": { "summary": "Listar grupos de terminales", "parameters": [{ "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Lista de grupos" } } },
+      "post": {
+        "summary": "Crear grupo de terminales",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "organization_id"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "organization_id": { "type": "string", "format": "uuid" },
+                  "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"], "default": "ACTIVE" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Grupo creado" } }
+      }
+    },
+    "/terminal-groups/{id}": {
+      "get": { "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Detalle del grupo" } } },
+      "patch": {
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Grupo actualizado" } }
+      },
+      "delete": { "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Grupo eliminado" } } }
+    },
+    "/telemetry": {
+      "post": {
+        "summary": "Enviar telemetría de terminal (requiere token DEVICE)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["serial_number", "connection_method", "battery_level", "is_charging", "device_signature"],
+                "properties": {
+                  "serial_number": { "type": "string" },
+                  "network_ssid": { "type": "string" },
+                  "connection_method": { "type": "string", "enum": ["WIFI","CELLULAR","ETHERNET","UNKNOWN"] },
+                  "battery_level": { "type": "integer", "minimum": 0, "maximum": 100 },
+                  "is_charging": { "type": "boolean" },
+                  "latitude": { "type": "number", "format": "float" },
+                  "longitude": { "type": "number", "format": "float" },
+                  "device_signature": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "202": { "description": "Telemetría recibida" } }
+      }
+    },
+    "/telemetry/terminals/{serial_number}": {
+      "get": {
+        "summary": "Obtener estado en vivo de un terminal",
+        "parameters": [{ "name": "serial_number", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Estado ONLINE con datos de telemetría o OFFLINE",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": { "status": "ONLINE", "battery_level": 85, "last_seen": "2025-01-01T12:00:00Z" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advertisers": {
+      "post": {
+        "summary": "Crear anunciante (requiere admin o usuario de organización)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "contact_name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Anunciante creado" } }
+      },
+      "get": {
+        "summary": "Listar anunciantes de una organización",
+        "parameters": [{ "name": "organization_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["ACTIVE","INACTIVE"] } }],
+        "responses": { "200": { "description": "Lista de anunciantes" } }
+      }
+    },
+    "/advertisers/{id}": {
+      "patch": {
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "contact_name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Anunciante actualizado" } }
+      },
+      "delete": { "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Eliminado" } } }
+    },
+    "/ads": {
+      "post": {
+        "summary": "Crear un anuncio (pendiente de aprobación)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "advertiser_id", "media_url", "media_type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "advertiser_id": { "type": "string", "format": "uuid" },
+                  "media_url": { "type": "string", "format": "uri" },
+                  "media_type": { "type": "string", "enum": ["IMAGE","VIDEO"] },
+                  "is_all_day": { "type": "boolean", "default": true },
+                  "start_time": { "type": "string", "format": "time", "example": "09:00" },
+                  "end_time": { "type": "string", "format": "time", "example": "18:00" },
+                  "days_of_week": { "type": "array", "items": { "type": "string", "enum": ["MON","TUE","WED","THU","FRI","SAT","SUN"] } },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Anuncio creado" } }
+      },
+      "get": {
+        "summary": "Listar anuncios con filtros",
+        "parameters": [
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "advertiser_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING","ACTIVE","REJECTED","INACTIVE"] } },
+          { "name": "media_type", "in": "query", "schema": { "type": "string", "enum": ["IMAGE","VIDEO"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "Lista paginada de anuncios" } }
+      }
+    },
+    "/ads/{id}": {
+      "get": { "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Detalle del anuncio" } } },
+      "delete": { "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Anuncio eliminado" } } }
+    },
+    "/ads/{id}/review": {
+      "post": {
+        "summary": "Revisar anuncio (aprobar/rechazar - solo admin)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": { "status": { "type": "string", "enum": ["ACTIVE","REJECTED","INACTIVE"] } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Estado actualizado" } }
+      }
+    },
+    "/ads/assignments": {
+      "post": {
+        "summary": "Asignar anuncio a terminales o grupos",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ad_id"],
+                "oneOf": [{ "required": ["terminal_ids"] }, { "required": ["group_ids"] }],
+                "properties": {
+                  "ad_id": { "type": "string", "format": "uuid" },
+                  "terminal_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+                  "group_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Asignación realizada" } }
+      }
+    },
+    "/ads/sync": {
+      "get": {
+        "summary": "Sincronizar anuncios para un terminal (requiere token DEVICE)",
+        "description": "Devuelve los anuncios activos que aplican al terminal, considerando día de semana y horario.",
+        "parameters": [
+          { "name": "x-group-id", "in": "header", "schema": { "type": "string", "format": "uuid" }, "description": "ID del grupo al que pertenece el terminal (opcional)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de anuncios a mostrar en el terminal",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": [
+                    { "id": "uuid", "name": "Promo", "media_url": "https://...", "media_type": "IMAGE", "is_all_day": true }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/impressions": {
+      "post": {
+        "summary": "Registrar impresión de anuncio (terminal)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ad_id"],
+                "properties": {
+                  "ad_id": { "type": "string", "format": "uuid" },
+                  "latitude": { "type": "number", "format": "float" },
+                  "longitude": { "type": "number", "format": "float" },
+                  "timestamp": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "202": { "description": "Impresión registrada" } }
+      }
+    },
+    "/impressions/analytics": {
+      "get": {
+        "summary": "Dashboard de métricas de impresiones",
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "advertiser_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "group_by", "in": "query", "schema": { "type": "string", "enum": ["day","week","month"], "default": "day" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas de vistas y top ads",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "summary": { "total_views": 1250, "unique_screens": 45 },
+                    "trend_chart": [{ "date": "2025-01-01", "views": 120 }],
+                    "top_performing_ads": [{ "ad_id": "uuid", "ad_name": "Oferta", "views": 300 }]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/impressions/heatmap/{adId}": {
+      "get": {
+        "summary": "Obtener ubicaciones geográficas de impresiones de un anuncio",
+        "parameters": [{ "name": "adId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "Lista de coordenadas",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": [{ "latitude": 18.4655, "longitude": -69.9395 }] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions": {
+      "post": {
+        "summary": "Registrar transacción (terminal)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "payment_method", "card_brand"],
+                "properties": {
+                  "amount": { "type": "number", "minimum": 0.01 },
+                  "payment_method": { "type": "string", "enum": ["CHIP","TAP","SWIPE"] },
+                  "card_brand": { "type": "string", "enum": ["VISA","MASTERCARD","AMEX","SUBSIDIZED"] },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Transacción registrada" } }
+      },
+      "get": {
+        "summary": "Listar transacciones con filtros",
+        "parameters": [
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "terminal_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "payment_method", "in": "query", "schema": { "type": "string", "enum": ["CHIP","TAP","SWIPE"] } },
+          { "name": "card_brand", "in": "query", "schema": { "type": "string", "enum": ["VISA","MASTERCARD","AMEX","SUBSIDIZED"] } },
+          { "name": "min_amount", "in": "query", "schema": { "type": "number" } },
+          { "name": "max_amount", "in": "query", "schema": { "type": "number" } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": { "200": { "description": "Lista paginada de transacciones" } }
+      }
+    },
+    "/transactions/dashboard": {
+      "get": {
+        "summary": "Dashboard financiero (resumen, tendencias, por marca)",
+        "parameters": [
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas financieras",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "summary": { "total_revenue": 12500.50, "total_transactions": 342, "average_ticket": 36.55 },
+                    "revenue_by_brand": [{ "brand": "VISA", "revenue": 8000, "transactions": 200 }],
+                    "revenue_trend": [{ "date": "2025-01-01", "revenue": 1200 }]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages": {
+      "post": {
+        "summary": "Enviar mensaje a terminales (requiere admin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "content"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "content": { "type": "string" },
+                  "type": { "type": "string", "enum": ["FLASH","STICKY"], "default": "FLASH" },
+                  "duration_seconds": { "type": "integer", "minimum": 1, "default": 10 },
+                  "organization_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "group_id": { "type": "string", "format": "uuid", "nullable": true },
+                  "terminal_id": { "type": "string", "format": "uuid", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Mensaje enviado" } }
+      }
+    },
+    "/messages/poll": {
+      "get": {
+        "summary": "Polling de mensajes para terminal (requiere token DEVICE)",
+        "parameters": [{ "name": "x-group-id", "in": "header", "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "Lista de mensajes activos (sticky + flash)",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": [{ "id": "uuid", "title": "Aviso", "content": "Mantenimiento", "type": "FLASH", "duration_seconds": 10 }] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/upload": {
+      "post": {
+        "summary": "Subir un archivo multimedia (imagen o video)",
+        "description": "Requiere autenticación. El archivo se sube mediante multipart/form-data. La respuesta incluye la ruta del archivo y el tipo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "Archivo de imagen o video" },
+                  "organization_id": { "type": "string", "format": "uuid", "description": "ID de organización (requerido si el usuario no es ORG_USER)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Archivo subido exitosamente",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": { "type": "IMAGE", "path": "orgs/uuid/1234567890/imagen.jpg" } }
+              }
+            }
+          },
+          "415": { "description": "Tipo de archivo no soportado" }
+        }
+      }
+    },
+    "/media/secure-url": {
+      "post": {
+        "summary": "Generar URL firmada de acceso temporal a un archivo multimedia",
+        "description": "Requiere autenticación. Devuelve una URL con expiración (por defecto 1 hora) que puede ser usada para reproducir/descargar el archivo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["file_path"],
+                "properties": { "file_path": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "URL segura generada",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": { "url": "http://localhost:8000/api/v1/media/private/orgs/.../file.jpg?expires=123456&signature=abc" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bi/dashboard": {
+      "get": {
+        "summary": "Dashboard de Business Intelligence (métricas unificadas)",
+        "description": "Combina datos de finanzas y anuncios. Requiere autenticación.",
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "terminal_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "group_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "time_group", "in": "query", "schema": { "type": "string", "enum": ["day","week","month","year"], "default": "day" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "KPIs combinados (ingresos, transacciones, impresiones, pantallas activas, tendencias, ranking de terminales, distribución de pagos)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "kpis": {
+                      "revenue": 12500,
+                      "transactions": 342,
+                      "average_ticket": "36.55",
+                      "impressions": 5400,
+                      "active_screens": 23
+                    },
+                    "charts": { "revenue_trend": [], "payment_distribution": [] },
+                    "rankings": { "top_terminals": [] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/encrypt": {
+      "post": {
+        "summary": "Cifrar datos (servicio interno)",
+        "description": "Este endpoint es usado por otros microservicios para cifrar payloads antes de enviar respuesta. No se recomienda su uso externo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["data"],
+                "properties": { "data": {} }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payload cifrado",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "payload": "iv:encrypted" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crypto/decrypt": {
+      "post": {
+        "summary": "Descifrar datos (servicio interno)",
+        "description": "Para uso interno de microservicios.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["payload"],
+                "properties": { "payload": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Datos descifrados",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": { "foo": "bar" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 
 >>> ARCHIVO: package.json
