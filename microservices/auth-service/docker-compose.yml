@@ -17,7 +17,6 @@ services:
       CRYPTO_SERVICE_URL: http://crypto-service:3009
       SETUP_MASTER_KEY: Prueba01*
       CRYPTO_SERVICE_URL: http://crypto-service:3009
-
       AD_BASE_URL: https://api-test.portall.com.do:2053/api/v2
       AD_AUTH_EMAIL: ecrt-plus@portaldom.com.do
       AD_AUTH_PASSWORD: TMmTP0NYOS0=
