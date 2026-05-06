@@ -10,7 +10,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(cryptoMiddleware);
+// // app.use(cryptoMiddleware);
 
 app.use('/api/v1/setup', setupRoutes);
 app.use('/api/v1/auth', authRoutes);
