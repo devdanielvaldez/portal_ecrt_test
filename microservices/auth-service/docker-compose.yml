@@ -15,6 +15,12 @@ services:
       DB_NAME: auth_db
       JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
       CRYPTO_SERVICE_URL: http://crypto-service:3009
+      SETUP_MASTER_KEY: Prueba01*
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+
+      AD_BASE_URL: https://api-test.portall.com.do:2053/api/v2
+      AD_AUTH_EMAIL: ecrt-plus@portaldom.com.do
+      AD_AUTH_PASSWORD: TMmTP0NYOS0=
     depends_on:
       - postgres
     networks:
