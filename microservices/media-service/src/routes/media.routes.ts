@@ -12,7 +12,7 @@ const router = Router();
 
 const USE_S3 = process.env.USE_S3 === 'true';
 
-router.get('/private/*', requireValidSignature, async (req: any, res: any) => {
+router.get('/private/:path(.*)', requireValidSignature, async (req: any, res: any) => {
   const filePath = req.params[0];
   if (USE_S3) {
     const { getPublicUrl } = await import('../services/storage.service');
