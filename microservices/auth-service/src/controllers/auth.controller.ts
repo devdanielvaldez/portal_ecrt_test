@@ -68,7 +68,7 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
 
 export const changePassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = parseInt(req.params.id);
+    const userId: any = parseInt(req.params.id);
     if (isNaN(userId)) {
       res.status(400).json({ error: 'Invalid user ID' });
       return;
