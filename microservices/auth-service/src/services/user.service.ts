@@ -6,14 +6,13 @@ const userRepo = AppDataSource.getRepository(User);
 export const createOrgUser = async (email: string, organization_id: string) => {
   const existing = await userRepo.findOneBy({ email });
   if (existing) throw new Error('EMAIL_EXISTS');
-  const password = Math.random().toString(36).slice(-10);
   const user = new User();
   user.email = email;
   user.role = UserRole.ORG_USER;
   user.organization_id = organization_id;
-  await user.setPassword(password);
+  user.status = 'ACTIVE';
   await userRepo.save(user);
-  return { user: { id: user.id, email: user.email }, raw_password: password };
+  return { user: { id: user.id, email: user.email } };
 };
 
 export const getUsersByOrg = async (organization_id: string) => {
@@ -27,12 +26,8 @@ export const updateUser = async (id: string, data: any) => {
   return await userRepo.save(user);
 };
 
-export const changePassword = async (id: string, newPassword: string) => {
-  const user = await userRepo.findOneBy({ id });
-  if (!user) throw new Error('USER_NOT_FOUND');
-  await user.setPassword(newPassword);
-  await userRepo.save(user);
-  return true;
+export const changePasswordLocal = async (id: string, newPassword: string) => {
+  throw new Error('Password management is delegated to Active Directory. Use /forget-password or /change-password endpoints.');
 };
 
 export const deleteUser = async (id: string) => {

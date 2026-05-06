@@ -13,11 +13,9 @@ export const cryptoMiddleware = async (req: Request, res: Response, next: NextFu
   const originalJson = res.json;
   res.json = function (data: any): Response {
     res.json = originalJson;
-    encryptPayload(data).then(encrypted => {
-      originalJson.call(this, { payload: encrypted });
-    }).catch(err => {
-      originalJson.call(this, { error: 'Encryption failed' });
-    });
+    encryptPayload(data)
+      .then(encrypted => originalJson.call(this, { payload: encrypted }))
+      .catch(err => originalJson.call(this, { error: 'Encryption failed' }));
     return this;
   };
   next();

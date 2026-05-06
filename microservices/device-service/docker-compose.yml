@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  device-service:
+    build: .
+    container_name: device-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: device_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - device-net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: device_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    networks:
+      - device-net
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    networks:
+      - device-net
+
+networks:
+  device-net:
+    driver: bridge

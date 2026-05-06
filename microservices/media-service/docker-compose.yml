@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  media-service:
+    build: .
+    container_name: media-service
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+      BASE_API_URL: http://localhost:8000/api/v1/media/private
+      USE_S3: ${USE_S3:-false}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+    volumes:
+      - media_uploads:/usr/src/app/uploads
+    networks:
+      - media-net
+    restart: unless-stopped
+
+volumes:
+  media_uploads:
+
+networks:
+  media-net:
+    driver: bridge

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: .
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: auth_db
+      JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    depends_on:
+      - postgres
+    networks:
+      - auth-net
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: auth_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    networks:
+      - auth-net
+
+networks:
+  auth-net:
+    driver: bridge

@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 export const CreateAdminSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
+  email: z.string().email()
 });
 
 export const CreateOrgUserSchema = z.object({
@@ -15,10 +14,6 @@ export const UpdateUserSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).optional()
 });
 
-export const ChangePasswordSchema = z.object({
+export const ChangePasswordLocalSchema = z.object({
   new_password: z.string().min(6)
 });
-export type CreateAdminDTO = z.infer<typeof CreateAdminSchema>;
-export type CreateOrgUserDTO = z.infer<typeof CreateOrgUserSchema>;
-export type UpdateUserDTO = z.infer<typeof UpdateUserSchema>;
-export type ChangePasswordDTO = z.infer<typeof ChangePasswordSchema>;

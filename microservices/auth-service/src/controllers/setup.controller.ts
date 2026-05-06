@@ -4,8 +4,8 @@ import * as setupService from '../services/setup.service';
 
 export const createAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const validatedData = CreateAdminSchema.parse(req.body);
-    const result = await setupService.setupFirstAdmin(validatedData);
+    const { email } = CreateAdminSchema.parse(req.body);
+    const result = await setupService.setupFirstAdmin(email);
     res.status(201).json({ success: true, message: 'Admin created', data: result });
   } catch (error: any) {
     if (error.name === 'ZodError') {

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  crypto-service:
+    build: .
+    container_name: crypto-service
+    ports:
+      - "3009:3009"
+    environment:
+      PORT: 3009
+      LOG_LEVEL: info
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+    networks:
+      - crypto-net
+    restart: unless-stopped
+
+networks:
+  crypto-net:
+    driver: bridge

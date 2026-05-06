@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  finance-service:
+    build: .
+    container_name: finance-service
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: ""
+      DB_NAME: finance_db
+      JWT_SECRET: bd1216e909de7d9443df38c00b79b8cefe90214bb976fd6ee0bd0563644d7d5735c34e960ab340bd38748a1205469b7d7ef6b76a32d44b699edaff81d606775b
+      CRYPTO_SERVICE_URL: http://crypto-service:3009
+    depends_on:
+      - postgres
+    networks:
+      - finance-net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: finance_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    networks:
+      - finance-net
+
+networks:
+  finance-net:
+    driver: bridge
