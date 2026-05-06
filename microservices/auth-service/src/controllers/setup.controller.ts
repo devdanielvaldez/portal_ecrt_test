@@ -8,6 +8,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
     const result = await setupService.setupFirstAdmin(email);
     res.status(201).json({ success: true, message: 'Admin created', data: result });
   } catch (error: any) {
+    console.log(error);
     if (error.name === 'ZodError') {
       res.status(400).json({ error: 'Validation error', details: error.errors });
       return;
