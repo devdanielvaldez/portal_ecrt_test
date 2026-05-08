@@ -1,18 +1,11 @@
 import { Router } from 'express';
-import { logImpression, getAnalytics, getHeatmap } from '../controllers/impression.controller';
-import { requireDevice } from '../middlewares/auth.middleware';
-import jwt from 'jsonwebtoken';
+import * as impressionController from '../controllers/impression.controller';
+import { requireAdmin, requireDevice } from '../middlewares/auth.middleware';
 
 const router = Router();
-const requireAuth = (req: any, res: any, next: any) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token' });
-  try { req.user = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret'); next(); }
-  catch(e) { res.status(401).json({ error: 'Invalid token' }); }
-};
 
-router.get('/dashboard', requireAuth, getAnalytics);
-router.get('/heatmap/:adId', requireAuth, getHeatmap);
-router.post('/', requireDevice, logImpression);
+router.post('/', requireDevice, impressionController.logImpression);
+router.get('/analytics', requireAdmin, impressionController.getAnalytics);
+router.get('/heatmap/:adId', requireAdmin, impressionController.getHeatmap);
 
 export default router;

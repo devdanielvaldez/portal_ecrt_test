@@ -25,7 +25,7 @@ export const FilterAdSchema = z.object({
   media_type: z.enum(['IMAGE', 'VIDEO']).optional(),
   search: z.string().optional(),
   page: z.string().regex(/^\d+$/).optional().default("1"),
-  limit: z.string().regex(/^\d+$/).optional().default("20")
+  limit: z.string().regex(/^\d+$/).default("20").transform(Number).refine(n => n <= 100, { message: "Limit cannot exceed 100" })
 });
 export type CreateAdDTO = z.infer<typeof CreateAdSchema>;
 export type ReviewAdDTO = z.infer<typeof ReviewAdSchema>;

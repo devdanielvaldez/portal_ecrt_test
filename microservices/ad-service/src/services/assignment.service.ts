@@ -9,6 +9,8 @@ const adRepo = AppDataSource.getRepository(Ad);
 export const assignAds = async (adId: string, terminalIds?: string[], groupIds?: string[]) => {
   const ad = await adRepo.findOneBy({ id: adId });
   if (!ad) throw new Error('AD_NOT_FOUND');
+  // TODO: A12 - Validar que terminales y grupos pertenezcan a la misma organizacion que el anuncio.
+  // Se recomienda llamar a device-service para verificar pertenencia.
   const assignments: any[] = [];
   if (terminalIds) {
     terminalIds.forEach(tid => assignments.push({ ad_id: adId, terminal_id: tid }));

@@ -1,0 +1,418 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ECRT Ad Service API",
+    "description": "Gestión de anuncios, anunciantes, impresiones y asignaciones.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3004/api/v1",
+      "description": "Servidor local de ad-service"
+    },
+    {
+      "url": "https://api.ecrt.com/v1",
+      "description": "Producción"
+    }
+  ],
+  "paths": {
+    "/advertisers": {
+      "post": {
+        "summary": "Crear un anunciante",
+        "description": "Requiere rol ADMIN o usuario ORG_USER (asigna automáticamente su organización).",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 2 },
+                  "contact_name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Anunciante creado" },
+          "400": { "description": "Error de validación" },
+          "409": { "description": "Nombre duplicado en la misma organización" },
+          "500": { "description": "Error interno" }
+        }
+      },
+      "get": {
+        "summary": "Listar anunciantes de una organización",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "organization_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de anunciantes",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "data": [] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advertisers/{id}": {
+      "patch": {
+        "summary": "Actualizar un anunciante",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 2 },
+                  "contact_name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Anunciante actualizado" },
+          "404": { "description": "No encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar anunciante (soft delete)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Eliminado" },
+          "404": { "description": "No encontrado" }
+        }
+      }
+    },
+    "/ads": {
+      "post": {
+        "summary": "Crear un anuncio (pendiente de aprobación)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "advertiser_id", "media_url", "media_type"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 2 },
+                  "advertiser_id": { "type": "string", "format": "uuid" },
+                  "media_url": { "type": "string", "format": "uri" },
+                  "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+                  "is_all_day": { "type": "boolean", "default": true },
+                  "start_time": { "type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", "nullable": true },
+                  "end_time": { "type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", "nullable": true },
+                  "days_of_week": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["MON","TUE","WED","THU","FRI","SAT","SUN"] }
+                  },
+                  "organization_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Anuncio creado (pendiente)" },
+          "400": { "description": "Error de validación" },
+          "500": { "description": "Error interno" }
+        }
+      },
+      "get": {
+        "summary": "Listar anuncios con filtros y paginación",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "advertiser_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING","ACTIVE","INACTIVE","REJECTED"] } },
+          { "name": "media_type", "in": "query", "schema": { "type": "string", "enum": ["IMAGE","VIDEO"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de anuncios",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": [],
+                  "meta": { "total_items": 0, "current_page": 1, "total_pages": 0 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ads/{id}": {
+      "get": {
+        "summary": "Obtener un anuncio por ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalle del anuncio" },
+          "403": { "description": "Acceso denegado (usuario ORG_USER no dueño)" },
+          "404": { "description": "No encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar anuncio (soft delete)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Eliminado" },
+          "404": { "description": "No encontrado" }
+        }
+      }
+    },
+    "/ads/{id}/review": {
+      "post": {
+        "summary": "Revisar anuncio (aprobar/rechazar) – solo ADMIN",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["ACTIVE", "REJECTED", "INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado actualizado" },
+          "403": { "description": "Rol no autorizado (se requiere ADMIN)" },
+          "500": { "description": "Error interno" }
+        }
+      }
+    },
+    "/ads/assignments": {
+      "post": {
+        "summary": "Asignar un anuncio a terminales o grupos",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ad_id"],
+                "oneOf": [
+                  { "required": ["terminal_ids"] },
+                  { "required": ["group_ids"] }
+                ],
+                "properties": {
+                  "ad_id": { "type": "string", "format": "uuid" },
+                  "terminal_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+                  "group_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Asignación realizada" },
+          "404": { "description": "Anuncio no encontrado" },
+          "500": { "description": "Error interno" }
+        }
+      }
+    },
+    "/ads/sync": {
+      "get": {
+        "summary": "Sincronizar anuncios para un terminal (requiere token DEVICE)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "x-group-id", "in": "header", "schema": { "type": "string", "format": "uuid" }, "description": "ID del grupo al que pertenece el terminal (opcional)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de anuncios activos que aplican al terminal (con horarios y días)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": "uuid",
+                      "name": "Oferta especial",
+                      "media_url": "https://...",
+                      "media_type": "IMAGE",
+                      "is_all_day": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/impressions": {
+      "post": {
+        "summary": "Registrar una impresión de anuncio (desde un terminal)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ad_id"],
+                "properties": {
+                  "ad_id": { "type": "string", "format": "uuid" },
+                  "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+                  "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+                  "timestamp": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Impresión registrada" },
+          "400": { "description": "Error de validación" },
+          "500": { "description": "Error interno" }
+        }
+      }
+    },
+    "/impressions/analytics": {
+      "get": {
+        "summary": "Dashboard de métricas de impresiones",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "advertiser_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "organization_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "group_by", "in": "query", "schema": { "type": "string", "enum": ["day", "week", "month"], "default": "day" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas agregadas",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "summary": { "total_views": 1500, "unique_screens": 45 },
+                    "trend_chart": [],
+                    "top_performing_ads": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/impressions/heatmap/{adId}": {
+      "get": {
+        "summary": "Obtener ubicaciones geográficas de impresiones de un anuncio",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "adId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de coordenadas",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": [{ "latitude": 18.4655, "longitude": -69.9395 }]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Ad": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "advertiser_id": { "type": "string", "format": "uuid" },
+          "media_url": { "type": "string", "format": "uri" },
+          "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+          "is_all_day": { "type": "boolean" },
+          "start_time": { "type": "string", "nullable": true },
+          "end_time": { "type": "string", "nullable": true },
+          "days_of_week": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["PENDING","ACTIVE","REJECTED","INACTIVE"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Advertiser": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "contact_name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["ACTIVE","INACTIVE"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Impression": {
+        "type": "object",
+        "properties": {
+          "ad_id": { "type": "string", "format": "uuid" },
+          "terminal_id": { "type": "string", "format": "uuid" },
+          "latitude": { "type": "number", "nullable": true },
+          "longitude": { "type": "number", "nullable": true },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
